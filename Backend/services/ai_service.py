@@ -127,20 +127,26 @@ def analyze_image_member1(image_url: str, complaint_id: str = "CT-1001") -> Dict
             - confidence: float between 0.80 and 0.99
             """
             
-            response = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=[
-                    types.Part.from_uri(file_uri=image_url, mime_type="image/jpeg"),
-                    prompt
-                ],
-                config=types.GenerateContentConfig(response_mime_type="application/json")
-            )
-            
-            data = json.loads(response.text)
-            return {
-                "complaint_id": complaint_id,
-                "image_analysis": data
-            }
+            # Try standard Gemini models (gemini-1.5-flash / gemini-2.0-flash)
+            for m_name in ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro']:
+                try:
+                    response = client.models.generate_content(
+                        model=m_name,
+                        contents=prompt if not image_url.startswith("http") else [
+                            types.Part.from_uri(file_uri=image_url, mime_type="image/jpeg"),
+                            prompt
+                        ],
+                        config=types.GenerateContentConfig(response_mime_type="application/json")
+                    )
+                    data = json.loads(response.text)
+                    return {
+                        "complaint_id": complaint_id,
+                        "image_analysis": data
+                    }
+                except Exception as inner_e:
+                    logger.debug(f"Attempt with {m_name} failed: {inner_e}")
+                    continue
+
         except Exception as e:
             logger.warning(f"Gemini API analysis notice (switching to vision heuristic): {e}")
 
