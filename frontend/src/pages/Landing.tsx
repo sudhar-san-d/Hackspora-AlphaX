@@ -1,25 +1,27 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShieldCheck, ArrowRight, Activity, MapPin, CheckCircle2, FileText, ChevronRight, Menu, X } from 'lucide-react'
 
 export default function Landing() {
   const navigate = useNavigate()
   const [isMobile, setIsMobile] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [ctaHovered, setCtaHovered] = useState(false)
+  const [learnHovered, setLearnHovered] = useState(false)
+  const [contactHovered, setContactHovered] = useState(false)
 
   const heroVideoRef = useRef<HTMLVideoElement>(null)
   const aboutVideoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768)
+      setIsMobile(window.innerWidth <= 700)
     }
     handleResize()
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Video Autoplay Retry Logic
+  // Robust Video Autoplay Retry Logic
   useEffect(() => {
     const playVideos = () => {
       ;[heroVideoRef.current, aboutVideoRef.current].forEach((video) => {
@@ -47,8 +49,8 @@ export default function Landing() {
     }
   }, [])
 
-  const handleNavClick = (target?: string) => {
-    if (target === 'features' || target === 'about') {
+  const handleNavClick = (sectionId?: string) => {
+    if (sectionId === 'features' || sectionId === 'about') {
       const el = document.getElementById('about-section')
       if (el) el.scrollIntoView({ behavior: 'smooth' })
     } else {
@@ -58,9 +60,25 @@ export default function Landing() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F172A] text-slate-100 font-sans selection:bg-blue-600 selection:text-white overflow-x-hidden">
+    <div
+      style={{
+        margin: 0,
+        backgroundColor: '#F2F1F0',
+        color: '#2b3033',
+        fontFamily: "'Quantico', 'Arial Narrow', sans-serif",
+        minHeight: '100vh',
+        overflowX: 'hidden',
+      }}
+    >
       {/* SECTION 1: HERO */}
-      <section className="relative min-h-[100dvh] flex flex-col justify-between overflow-hidden border-b border-slate-800">
+      <section
+        style={{
+          position: 'relative',
+          minHeight: '100svh',
+          backgroundColor: '#F2F1F0',
+          overflow: 'hidden',
+        }}
+      >
         {/* Background Video */}
         <video
           ref={heroVideoRef}
@@ -70,238 +88,419 @@ export default function Landing() {
           loop
           playsInline
           preload="auto"
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity-30 mix-blend-luminosity"
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: isMobile ? undefined : '-20%',
+            left: isMobile ? '-12%' : undefined,
+            width: isMobile ? '119%' : '99%',
+            height: 'auto',
+            objectFit: 'contain',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
         />
 
-        {/* Gradient Scrim Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0F172A] via-[#0F172A]/90 to-[#0F172A]/40 pointer-events-none z-[1]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-[#0F172A]/60 pointer-events-none z-[1]" />
+        {/* Desktop Scrim Overlay */}
+        {!isMobile && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '70%',
+              height: '100%',
+              background:
+                'linear-gradient(90deg, #F2F1F0 0%, #F2F1F0 55%, rgba(242,241,240,0.85) 78%, rgba(242,241,240,0) 100%)',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          />
+        )}
 
         {/* Navbar */}
-        <header className="relative z-10 max-w-7xl w-full mx-auto px-6 py-6 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-            <div className="h-10 w-10 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 shadow-lg shadow-blue-500/10">
-              <ShieldCheck className="w-5 h-5" />
+        <header
+          style={{
+            position: 'relative',
+            zIndex: 10,
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 'clamp(20px, 5vw, 56px)',
+            padding: 'clamp(20px, 3vw, 38px) clamp(20px, 4vw, 48px) 0 clamp(20px, 4vw, 48px)',
+          }}
+        >
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '50%',
+                backgroundColor: '#111111',
+                display: 'grid',
+                placeItems: 'center',
+              }}
+            >
+              <div
+                style={{
+                  width: '20px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: '#FFFFFF',
+                  transform: 'rotate(-25deg)',
+                }}
+              />
             </div>
-            <div>
-              <span className="text-xl font-bold tracking-tight text-white block">CivicTrack AI</span>
-              <span className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">Municipal Platform</span>
-            </div>
+            <span
+              style={{
+                fontSize: 'clamp(22px, 5vw, 30px)',
+                fontWeight: 400,
+                color: '#111111',
+                letterSpacing: '-0.5px',
+                textTransform: 'lowercase',
+              }}
+            >
+              civictrack
+            </span>
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
-            <button onClick={() => navigate('/')} className="hover:text-white transition-colors">
-              Home
-            </button>
-            <button onClick={() => handleNavClick('features')} className="hover:text-white transition-colors">
-              Platform Features
-            </button>
-            <button onClick={() => handleNavClick('about')} className="hover:text-white transition-colors">
-              Workflow
-            </button>
-          </nav>
-
-          {/* Action Buttons */}
-          <div className="hidden md:flex items-center gap-4">
-            <button
-              onClick={() => navigate('/login')}
-              className="text-sm font-medium text-slate-300 hover:text-white transition-colors px-4 py-2"
+          {/* Desktop Nav Links */}
+          {!isMobile && (
+            <nav
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '34px',
+              }}
             >
-              Sign In
-            </button>
-            <button
-              onClick={() => navigate('/login')}
-              className="group inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-all shadow-lg shadow-blue-600/25 active:scale-95"
-            >
-              <span>Report an Issue</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </button>
-          </div>
+              {['HOME', 'FEATURES', 'REPORT ISSUE'].map((link) => (
+                <button
+                  key={link}
+                  onClick={() => handleNavClick(link.toLowerCase().replace(' issue', ''))}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontFamily: "'Quantico', 'Arial Narrow', sans-serif",
+                    fontWeight: 700,
+                    fontSize: 'clamp(12px, 2.4vw, 15px)',
+                    letterSpacing: '0.06em',
+                    color: '#3a3a3a',
+                    whiteSpace: 'nowrap',
+                    cursor: 'pointer',
+                    textTransform: 'uppercase',
+                    padding: 0,
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = '#000000')}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = '#3a3a3a')}
+                >
+                  {link}
+                </button>
+              ))}
+            </nav>
+          )}
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden text-slate-300 hover:text-white p-2"
-            aria-label="Toggle Menu"
-          >
-            {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          {/* Desktop Contact / Action Button */}
+          {!isMobile && (
+            <button
+              onClick={() => handleNavClick('login')}
+              onMouseEnter={() => setContactHovered(true)}
+              onMouseLeave={() => setContactHovered(false)}
+              style={{
+                background: contactHovered ? 'rgba(255,255,255,0.14)' : 'transparent',
+                border: 'none',
+                color: '#FFFFFF',
+                textTransform: 'uppercase',
+                letterSpacing: '0.14em',
+                fontWeight: 700,
+                fontSize: '13px',
+                fontFamily: "'Quantico', 'Arial Narrow', sans-serif",
+                padding: '14px 26px',
+                clipPath:
+                  'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
+                transition: 'background 0.2s ease',
+              }}
+            >
+              REPORT ISSUE
+              <svg width="17" height="13" viewBox="0 0 17 13" fill="none" stroke="#FFFFFF" strokeWidth="1.4">
+                <rect x="0.7" y="0.7" width="15.6" height="11.6" rx="1.3" />
+                <path d="M1.5 1.5L8.5 7.5L15.5 1.5" />
+              </svg>
+            </button>
+          )}
+
+          {/* Mobile Hamburger Button */}
+          {isMobile && (
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '5px',
+                padding: '8px',
+              }}
+              aria-label="Toggle navigation menu"
+            >
+              <div style={{ width: '22px', height: '2px', backgroundColor: '#FFFFFF' }} />
+              <div style={{ width: '22px', height: '2px', backgroundColor: '#FFFFFF' }} />
+              <div style={{ width: '22px', height: '2px', backgroundColor: '#FFFFFF' }} />
+            </button>
+          )}
         </header>
 
-        {/* Mobile Dropdown */}
-        {menuOpen && (
-          <div className="md:hidden relative z-20 bg-slate-900 border-b border-slate-800 px-6 py-6 space-y-4">
-            <button
-              onClick={() => handleNavClick('features')}
-              className="block w-full text-left text-slate-300 hover:text-white py-2"
-            >
-              Platform Features
-            </button>
-            <button
-              onClick={() => handleNavClick('about')}
-              className="block w-full text-left text-slate-300 hover:text-white py-2"
-            >
-              Workflow
-            </button>
-            <div className="pt-4 border-t border-slate-800 flex flex-col gap-3">
+        {/* Mobile Dropdown Menu */}
+        {isMobile && menuOpen && (
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 20,
+              backgroundColor: '#1a1c1e',
+              padding: '24px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '18px',
+            }}
+          >
+            {['HOME', 'FEATURES', 'REPORT ISSUE'].map((link) => (
               <button
-                onClick={() => navigate('/login')}
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-lg text-center"
+                key={link}
+                onClick={() => handleNavClick(link.toLowerCase().replace(' issue', ''))}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#FFFFFF',
+                  fontFamily: "'Quantico', 'Arial Narrow', sans-serif",
+                  fontWeight: 700,
+                  fontSize: '16px',
+                  letterSpacing: '0.06em',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
               >
-                Report an Issue
+                {link}
               </button>
-            </div>
+            ))}
           </div>
         )}
 
-        {/* Hero Content */}
-        <div className="relative z-10 max-w-7xl w-full mx-auto px-6 py-12 md:py-20 flex-1 flex flex-col justify-center">
-          <div className="max-w-3xl space-y-6">
-            {/* Status Pill */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-mono tracking-wide">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span>Municipal Operations & Triage Network</span>
-            </div>
+        {/* Hero Content Container */}
+        <div style={{ position: 'relative', zIndex: 5 }}>
+          {/* Headline */}
+          <h1
+            style={{
+              fontFamily: "'Quantico', 'Arial Narrow', sans-serif",
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              lineHeight: 1.05,
+              letterSpacing: '0.02em',
+              color: '#2b3033',
+              fontSize: isMobile ? 'clamp(32px, 8vw, 48px)' : 'clamp(40px, 5.5vw, 68px)',
+              maxWidth: '820px',
+              margin: 0,
+              marginTop: isMobile ? '360px' : undefined,
+              padding: isMobile
+                ? '0 20px 24px 20px'
+                : 'min(clamp(40px, 7vw, 100px), 8vh) 20px 24px clamp(20px, 9vw, 118px)',
+            }}
+          >
+            POWERING THE RESPONSE
+            <br />
+            FOR <span style={{ color: '#15BCDF' }}>MODERN CITIES</span>
+          </h1>
 
-            {/* Main Professional Headline */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-[1.1]">
-              Powering Swift Infrastructure Response for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">Modern Cities</span>
-            </h1>
-
-            {/* Subtitle */}
-            <p className="text-lg sm:text-xl text-slate-300 max-w-2xl font-normal leading-relaxed">
-              CivicTrack AI turns resident field reports into verified, prioritized public-works action—from AI computer vision triage to automated SLA crew dispatch.
-            </p>
-
-            {/* CTAs */}
-            <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-              <button
-                onClick={() => navigate('/login')}
-                className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-7 py-3.5 rounded-lg shadow-xl shadow-blue-600/30 transition-all text-base active:scale-98"
-              >
-                <span>Report an Issue</span>
-                <ArrowRight className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => navigate('/login')}
-                className="inline-flex items-center justify-center gap-2 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-slate-200 font-semibold px-7 py-3.5 rounded-lg transition-all text-base"
-              >
-                <Activity className="w-5 h-5 text-blue-400" />
-                <span>Explore Demo Workspace</span>
-              </button>
-            </div>
-
-            {/* Live Metrics Row */}
-            <div className="pt-10 grid grid-cols-3 gap-6 max-w-lg border-t border-slate-800/80 text-left">
-              <div>
-                <div className="text-2xl sm:text-3xl font-bold text-white font-mono">4.2h</div>
-                <div className="text-xs text-slate-400 mt-1">Median Triage Time</div>
-              </div>
-              <div>
-                <div className="text-2xl sm:text-3xl font-bold text-emerald-400 font-mono">87.4%</div>
-                <div className="text-xs text-slate-400 mt-1">SLA Verified</div>
-              </div>
-              <div>
-                <div className="text-2xl sm:text-3xl font-bold text-blue-400 font-mono">20+</div>
-                <div className="text-xs text-slate-400 mt-1">Active Cases</div>
-              </div>
-            </div>
+          {/* CTA Button Wrapper */}
+          <div
+            style={{
+              paddingLeft: 'clamp(20px, 9vw, 118px)',
+              paddingBottom: 'min(clamp(36px, 6vw, 80px), 7vh)',
+            }}
+          >
+            <button
+              onClick={() => navigate('/login')}
+              onMouseEnter={() => setCtaHovered(true)}
+              onMouseLeave={() => setCtaHovered(false)}
+              style={{
+                backgroundColor: ctaHovered ? '#3fd0ef' : '#15BCDF',
+                border: '1px solid #0fa3c2',
+                color: '#1a1c1e',
+                textTransform: 'uppercase',
+                fontWeight: 700,
+                letterSpacing: '0.14em',
+                padding: '18px 34px',
+                fontSize: 'clamp(13px, 2.2vw, 16px)',
+                fontFamily: "'Quantico', 'Arial Narrow', sans-serif",
+                clipPath:
+                  'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))',
+                boxShadow: ctaHovered
+                  ? '0 0 0 1px rgba(63,208,239,0.5), 0 12px 35px -10px rgba(63,208,239,0.8)'
+                  : '0 0 0 1px rgba(21,188,223,0.35), 0 10px 30px -12px rgba(15,163,194,0.6)',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '12px',
+                transition: 'all 0.25s ease',
+              }}
+            >
+              <span>REPORT AN ISSUE</span>
+              <span
+                style={{
+                  width: '22px',
+                  height: '1px',
+                  backgroundColor: '#1a1c1e',
+                  display: 'inline-block',
+                }}
+              />
+            </button>
           </div>
         </div>
       </section>
 
-      {/* SECTION 2: ABOUT / PLATFORM WORKFLOW */}
-      <section id="about-section" className="relative py-24 bg-slate-900 border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
-          {/* Left Column Text */}
-          <div className="space-y-8">
-            <div className="space-y-3">
-              <span className="text-xs font-mono uppercase tracking-widest text-blue-400 font-semibold">
-                Accountable Infrastructure
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-snug">
-                Accountable Civic Response & Automated Triage
-              </h2>
-            </div>
+      {/* SECTION 2: ABOUT / PLATFORM */}
+      <section
+        id="about-section"
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '40px',
+          background: 'linear-gradient(180deg, #F2F1F0 0%, #F7F6F8 18%, #F7F6F8 100%)',
+          padding: 'clamp(60px, 10vw, 140px) 0 clamp(30px, 5vw, 70px) clamp(20px, 9vw, 118px)',
+        }}
+      >
+        {/* Left Column */}
+        <div
+          style={{
+            flex: '1 1 420px',
+            minWidth: '300px',
+            paddingRight: '20px',
+          }}
+        >
+          {/* H2 Professional Headline */}
+          <h2
+            style={{
+              fontFamily: "'Quantico', 'Arial Narrow', sans-serif",
+              fontWeight: 700,
+              fontSize: 'clamp(30px, 4.5vw, 56px)',
+              textTransform: 'uppercase',
+              lineHeight: 1.05,
+              letterSpacing: '0.02em',
+              color: '#2b3033',
+              margin: 0,
+            }}
+          >
+            CIVIC <span style={{ color: '#15BCDF' }}>RESPONSE</span>
+          </h2>
 
-            <p className="text-slate-300 text-base sm:text-lg leading-relaxed">
-              CivicTrack AI builds the operational bridge between citizens and public works departments. Powered by computer vision and automated decision engines, we classify field evidence, eliminate duplicate reports, and route work orders instantly.
-            </p>
+          {/* Paragraph */}
+          <p
+            style={{
+              maxWidth: '520px',
+              margin: '24px 0 0 0',
+              fontSize: 'clamp(14px, 1.6vw, 17px)',
+              lineHeight: 1.7,
+              color: '#6b6f72',
+              fontFamily: "'Quantico', 'Arial Narrow', sans-serif",
+            }}
+          >
+            CivicTrack AI turns resident field reports into verified, prioritized public-works action.
+            From automated AI triage to real-time dispatch and SLA tracking, we make sure municipal
+            teams resolve infrastructure issues fast. Every report tracked, zero delays.
+          </p>
 
-            <div className="space-y-4">
-              <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-800/50 border border-slate-700/60">
-                <div className="p-2.5 rounded-lg bg-blue-500/10 text-blue-400 shrink-0">
-                  <CheckCircle2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-white text-base">Automated AI Evidence Analysis</h3>
-                  <p className="text-slate-400 text-sm mt-1">Instant severity rating, hazard detection, and department classification from single photo upload.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-800/50 border border-slate-700/60">
-                <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 shrink-0">
-                  <MapPin className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-white text-base">Geo-Fenced Duplicate Detection</h3>
-                  <p className="text-slate-400 text-sm mt-1">Consolidate multiple citizen reports for the same incident to prevent duplicate work orders.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-800/50 border border-slate-700/60">
-                <div className="p-2.5 rounded-lg bg-cyan-500/10 text-cyan-400 shrink-0">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-white text-base">Transparent Public Audit Trail</h3>
-                  <p className="text-slate-400 text-sm mt-1">Real-time status updates from initial submission to field crew completion evidence.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <button
-                onClick={() => navigate('/login')}
-                className="group inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3 rounded-lg transition-all shadow-md shadow-blue-600/20 active:scale-95"
-              >
-                <span>Access Demo Workspace</span>
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-              </button>
-            </div>
-          </div>
-
-          {/* Right Column Video Preview */}
-          <div className="relative rounded-2xl overflow-hidden border border-slate-700 shadow-2xl bg-slate-800">
-            <video
-              ref={aboutVideoRef}
-              src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260823_063501_2e2c8971-de1e-473a-8611-a0c9ae7ee186.mp4"
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-              className="w-full h-full object-cover min-h-[340px]"
+          {/* Learn More / Explore Demo Button */}
+          <button
+            onClick={() => navigate('/login')}
+            onMouseEnter={() => setLearnHovered(true)}
+            onMouseLeave={() => setLearnHovered(false)}
+            style={{
+              backgroundColor: learnHovered ? '#3fd0ef' : '#15BCDF',
+              border: '1px solid #0fa3c2',
+              color: '#1a1c1e',
+              textTransform: 'uppercase',
+              fontWeight: 700,
+              letterSpacing: '0.14em',
+              padding: '18px 34px',
+              fontSize: 'clamp(13px, 2.2vw, 16px)',
+              fontFamily: "'Quantico', 'Arial Narrow', sans-serif",
+              margin: '28px 0 0 0',
+              clipPath:
+                'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))',
+              boxShadow: learnHovered
+                ? '0 0 0 1px rgba(63,208,239,0.5), 0 12px 35px -10px rgba(63,208,239,0.8)'
+                : '0 0 0 1px rgba(21,188,223,0.35), 0 10px 30px -12px rgba(15,163,194,0.6)',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '12px',
+              transition: 'all 0.25s ease',
+            }}
+          >
+            <span>EXPLORE DEMO</span>
+            <span
+              style={{
+                width: '22px',
+                height: '1px',
+                backgroundColor: '#1a1c1e',
+                display: 'inline-block',
+              }}
             />
-            {/* Subtle Overlay Tint */}
-            <div className="absolute inset-0 bg-blue-600/10 mix-blend-overlay pointer-events-none" />
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-8 bg-slate-950 border-t border-slate-800/80 text-xs text-slate-400">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© 2026 CivicTrack AI · Municipal Public Works Platform</p>
-          <button onClick={() => navigate('/login')} className="hover:text-white transition-colors">
-            Access Role Workspaces →
           </button>
         </div>
-      </footer>
+
+        {/* Right Column */}
+        <div
+          style={{
+            flex: '1 1 360px',
+            minWidth: '280px',
+            justifyContent: 'flex-end',
+            position: 'relative',
+            display: 'flex',
+          }}
+        >
+          {/* Video */}
+          <video
+            ref={aboutVideoRef}
+            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260823_063501_2e2c8971-de1e-473a-8611-a0c9ae7ee186.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            style={{
+              width: '100%',
+              maxWidth: '644px',
+              height: 'auto',
+              display: 'block',
+              marginLeft: 'auto',
+            }}
+          />
+
+          {/* Cyan Overlay Rectangle */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              width: '100%',
+              maxWidth: '644px',
+              height: '100%',
+              backgroundColor: '#15BCDF',
+              mixBlendMode: 'hue',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          />
+        </div>
+      </section>
     </div>
   )
 }
