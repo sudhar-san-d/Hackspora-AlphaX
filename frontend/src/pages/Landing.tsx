@@ -297,7 +297,7 @@ export default function Landing() {
           {/* Headline */}
           <h1
             style={{
-              fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+              fontFamily: "'Quantico', 'Arial Narrow', sans-serif",
               fontWeight: 700,
               textTransform: 'uppercase',
               lineHeight: 0.98,
@@ -314,15 +314,15 @@ export default function Landing() {
             <div>POWERING</div>
             <div>THE</div>
             <div>RESPONSE</div>
-            <div style={{ marginLeft: 'min(238px, 28vw)' }}>FOR</div>
-            <div style={{ marginLeft: 'min(238px, 28vw)' }}>MODERN</div>
-            <div style={{ marginLeft: 'min(238px, 28vw)', color: '#15BCDF' }}>CITIES</div>
+            <div>FOR</div>
+            <div>MODERN</div>
+            <div style={{ color: '#15BCDF' }}>CITIES</div>
           </h1>
 
           {/* CTA Button Wrapper */}
           <div
             style={{
-              paddingLeft: 'calc(clamp(20px, 9vw, 118px) + min(238px, 28vw))',
+              paddingLeft: isMobile ? '20px' : 'clamp(20px, 9vw, 118px)',
               paddingBottom: 'min(clamp(36px, 6vw, 80px), 7vh)',
             }}
           >
@@ -386,7 +386,7 @@ export default function Landing() {
             paddingRight: '20px',
           }}
         >
-          {/* H2 Staircase Headline */}
+          {/* H2 Headline */}
           <h2
             style={{
               fontFamily: "'Quantico', 'Arial Narrow', sans-serif",
@@ -400,14 +400,14 @@ export default function Landing() {
             }}
           >
             <div>CIVIC</div>
-            <div style={{ marginLeft: 'min(160px, 18vw)', color: '#15BCDF' }}>RESPONSE</div>
+            <div style={{ color: '#15BCDF' }}>RESPONSE</div>
           </h2>
 
           {/* Paragraph */}
           <p
             style={{
               maxWidth: '520px',
-              margin: '32px 0 0 min(160px, 18vw)',
+              margin: '32px 0 0 0',
               fontSize: 'clamp(14px, 1.6vw, 17px)',
               lineHeight: 1.7,
               color: '#6b6f72',
@@ -434,7 +434,7 @@ export default function Landing() {
               padding: '18px 34px',
               fontSize: 'clamp(13px, 2.2vw, 16px)',
               fontFamily: "'Quantico', 'Arial Narrow', sans-serif",
-              margin: '36px 0 0 min(160px, 18vw)',
+              margin: '36px 0 0 0',
               clipPath:
                 'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))',
               boxShadow: learnHovered
