@@ -37,11 +37,11 @@ def build_timeline_response(complaint_id: str, status: str, created_at: str, db)
 
     timeline = [
         {"title": "Complaint Submitted", "time": created_at, "completed": True},
-        {"title": "AI Analyzed", "time": created_at, "completed": True},
-        {"title": "Department Assigned", "time": created_at, "completed": True},
+        {"title": "AI Vision & Triage Analyzed", "time": created_at, "completed": True},
+        {"title": "Department & SLA Assigned", "time": created_at, "completed": True},
         {"title": "Officer Assigned", "time": created_at, "completed": status not in ["SUBMITTED", "ANALYZING"], "officer": "Ravi K. (Field Officer #12)"},
         {"title": "Field Action", "time": "In Progress" if status == "FIELD_ACTION" else "Pending", "completed": status in ["FIELD_ACTION", "AWAITING_VERIFICATION", "VERIFIED"], "inProgress": status == "FIELD_ACTION"},
-        {"title": "Resolution Verification", "time": "Pending", "completed": status in ["AWAITING_VERIFICATION", "VERIFIED"], "inProgress": status == "AWAITING_VERIFICATION"},
+        {"title": "Resolution Proof Verification", "time": "Pending", "completed": status in ["AWAITING_VERIFICATION", "VERIFIED"], "inProgress": status == "AWAITING_VERIFICATION"},
         {"title": "Closed", "time": "Pending", "completed": status == "VERIFIED"}
     ]
 
@@ -55,10 +55,10 @@ def create_complaint_service(payload):
     now = datetime.now()
     created_str = now.strftime("%Y-%m-%d %H:%M:%S")
 
-    # Step 1: Member 1 Vision AI analysis
+    # Step 1: Member 1 Vision AI analysis (Gemini 1.5 Flash / Vision Engine)
     v_res = analyze_image_member1(payload.image_url, complaint_id)
 
-    # Step 2: Member 2 Decision AI
+    # Step 2: Member 2 Decision AI & Duplicate Detection Engine
     d_res = generate_decision_member2(
         description=payload.description,
         location=payload.location.dict(),
@@ -76,6 +76,7 @@ def create_complaint_service(payload):
     sla_h = d_res["sla"]["target_hours"]
     ai_confidence = d_res["ai"]["confidence"]
     ai_reason = d_res["ai"]["reason"]
+    dup_info = d_res.get("incident", {})
 
     deadline_str = (now + timedelta(hours=sla_h)).strftime("%Y-%m-%d %H:%M:%S")
 
@@ -96,10 +97,14 @@ def create_complaint_service(payload):
         p_score, p_level, sla_h, deadline_str, ai_confidence, ai_reason, created_str, created_str
     ))
 
+    reason_msg = 'Complaint submitted via App'
+    if dup_info.get("possible_duplicate"):
+        reason_msg += f' (Duplicate vector match with {dup_info.get("matched_complaint_id")})'
+
     cursor.execute("""
     INSERT INTO complaint_status_history (complaint_id, old_status, new_status, updated_by, reason, created_at)
-    VALUES (?, 'NONE', 'SUBMITTED', 'CITIZEN', 'Complaint submitted via App', ?);
-    """, (complaint_id, created_str))
+    VALUES (?, 'NONE', 'SUBMITTED', 'CITIZEN', ?, ?);
+    """, (complaint_id, reason_msg, created_str))
 
     db.commit()
 
@@ -122,6 +127,7 @@ def create_complaint_service(payload):
             "address": payload.location.address
         },
         "ai_explanation": ai_reason,
+        "incident": dup_info,
         "created_at": created_str,
         "timeline": build_timeline_response(complaint_id, "SUBMITTED", created_str, db)
     }

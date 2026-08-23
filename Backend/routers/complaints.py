@@ -86,7 +86,7 @@ def upload_evidence(complaint_id: str, payload: EvidenceUploadSchema):
     db = get_db()
     cursor = db.cursor()
 
-    cursor.execute("SELECT latitude, longitude FROM complaints WHERE complaint_id = ?;", (complaint_id,))
+    cursor.execute("SELECT latitude, longitude, image_url FROM complaints WHERE complaint_id = ?;", (complaint_id,))
     row = cursor.fetchone()
     if not row:
         db.close()
@@ -94,9 +94,18 @@ def upload_evidence(complaint_id: str, payload: EvidenceUploadSchema):
 
     orig_lat = row["latitude"]
     orig_lon = row["longitude"]
+    orig_img = row["image_url"] or ""
 
-    v_res = verify_resolution_proof(orig_lat, orig_lon, payload.latitude, payload.longitude)
+    v_res = verify_resolution_proof(
+        orig_lat=orig_lat,
+        orig_lon=orig_lon,
+        evidence_lat=payload.latitude,
+        evidence_lon=payload.longitude,
+        orig_image_url=orig_img,
+        evidence_image_url=payload.image_url
+    )
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     captured_at_str = payload.captured_at or now_str
 
     new_status = "VERIFIED" if v_res["status"] == "PASSED" else "REOPENED"

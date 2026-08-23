@@ -14,6 +14,13 @@ SLA_HOURS_CONFIG = {
 # Geo-Verification Max Allowed Distance Threshold in Meters
 MAX_GEO_DISTANCE_METERS = 100.0
 
+# ML Model Configuration
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+DINO_MODEL_NAME = "facebookresearch/dinov2:main"
+DINO_VARIANT = "dinov2_vits14"
+DUPLICATE_SIMILARITY_THRESHOLD = 0.75  # Cosine similarity threshold for duplicate detection
+
 # CORS Allowed Origins
 CORS_ORIGINS = [
     "http://localhost:3000",
@@ -21,3 +28,4 @@ CORS_ORIGINS = [
     "http://localhost:5173",
     "*"
 ]
+
