@@ -1,37 +1,11 @@
-# Dependencies
 node_modules/
-Frontend/node_modules/
-
-# Production / Build output
 dist/
-Frontend/dist/
-dist-ssr/
-
-# Logs & temporary files
-*.log
-logs
-npm-debug.log*
-yarn-debug.log*
-
-# Python / Backend
-__pycache__/
-Backend/__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.db
-Backend/*.db
 .env
-venv/
-.pytest_cache/
-
-# IDE / System
-.vscode/
-!.vscode/extensions.json
-.idea/
+.env.*
+!.env.example
+*.log
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+coverage/
+.vite/
+.netlify/
+*.tsbuildinfo
