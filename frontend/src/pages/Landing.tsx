@@ -305,10 +305,10 @@ export default function Landing() {
               color: '#2b3033',
               fontSize: isMobile ? 'clamp(34px, 10vw, 56px)' : 'min(clamp(34px, 7.6vw, 80px), 9.2vh)',
               margin: 0,
-              marginTop: isMobile ? '380px' : undefined,
+              marginTop: isMobile ? '440px' : undefined,
               padding: isMobile
-                ? '0 20px 28px 20px'
-                : 'clamp(90px, 15vh, 200px) 20px min(clamp(24px, 4vw, 44px), 5vh) clamp(20px, 9vw, 118px)',
+                ? '20px 20px 28px 20px'
+                : 'clamp(140px, 22vh, 280px) 20px min(clamp(24px, 4vw, 44px), 5vh) clamp(20px, 9vw, 118px)',
             }}
           >
             <div>POWERING THE</div>
