@@ -5,16 +5,17 @@ export default {
     extend: {
       colors: {
         civic: {
-          bg: '#0B1220', surface: '#111827', secondary: '#172033', text: '#F8FAFC',
-          muted: '#94A3B8', border: '#263244', accent: '#2563EB', success: '#16A34A',
-          warning: '#D97706', critical: '#DC2626',
+          bg: '#F2F1F0', surface: '#FFFFFF', secondary: '#E8E7E5', text: '#2B3033',
+          muted: '#6B6F72', border: '#DCDAD7', accent: '#15BCDF', success: '#10B981',
+          warning: '#F59E0B', critical: '#EF4444', dark: '#1A1C1E',
         },
       },
       fontFamily: {
         sans: ['IBM Plex Sans', 'sans-serif'],
         mono: ['IBM Plex Mono', 'monospace'],
+        quantico: ['Quantico', 'Arial Narrow', 'sans-serif'],
       },
-      boxShadow: { panel: '0 18px 50px rgba(2, 6, 23, 0.24)' },
+      boxShadow: { panel: '0 10px 30px rgba(0, 0, 0, 0.06)' },
     },
   },
   plugins: [],

@@ -64,20 +64,190 @@ export default function CitizenPortal() {
     } catch (caught) { setAsyncState('error'); setError(caught instanceof Error ? caught.message : 'Report submission failed. Your draft is preserved.') }
   }
 
-  return <div className="space-y-8"><SectionHeading eyebrow="Resident service portal" title={`Good ${new Date().getHours() < 12 ? 'morning' : 'afternoon'}, ${currentUser?.name.split(' ')[0]}`} description="Report public infrastructure conditions and follow municipal work from verification through completion." />
-    <section className="grid grid-cols-2 gap-4 lg:grid-cols-4" aria-label="Report summary"><Metric label="My reports" value={mine.length} detail="All submitted cases"/><Metric label="Open" value={open} detail="Awaiting completion"/><Metric label="Resolved" value={mine.filter(item => item.status === 'resolved').length} detail="Field verified" tone="success"/><Metric label="Avg. first update" value="2.8h" detail="Current service period"/></section>
-    <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,.95fr)_minmax(420px,.75fr)]">
-      <section id="new-report" className="panel scroll-mt-24 overflow-hidden"><div className="border-b border-civic-border px-5 py-5 sm:px-7"><p className="eyebrow">New infrastructure report</p><h2 className="mt-2 text-xl font-semibold">Show us what needs attention</h2><p className="mt-2 text-sm text-civic-muted">One clear photo and precise location help crews respond faster.</p></div>
-        <form onSubmit={submit} className="space-y-6 p-5 sm:p-7" noValidate>
-          <div><label className="label">1. Add a clear photo</label><input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={upload}/>{draft.imageUrl ? <div className="relative overflow-hidden border border-civic-border bg-civic-bg"><img src={draft.imageUrl} alt="Selected issue preview" className="aspect-[16/9] w-full object-cover"/><div className="flex items-center justify-between gap-3 border-t border-civic-border px-3 py-2"><span className="truncate text-xs text-civic-muted">{draft.fileName || 'Issue image'}</span><button type="button" onClick={() => { setDraft({ imageUrl: '', fileName: '' }); if (inputRef.current) inputRef.current.value = '' }} className="inline-flex items-center gap-1 text-xs text-civic-muted hover:text-civic-text"><X size={14} strokeWidth={1.6}/>Remove</button></div></div> : <button type="button" onClick={() => inputRef.current?.click()} className="grid min-h-44 w-full place-items-center border border-dashed border-civic-border bg-civic-bg px-5 text-center transition-colors hover:border-civic-accent"><span><span className="mx-auto grid h-11 w-11 place-items-center bg-civic-secondary text-civic-muted"><Camera size={21} strokeWidth={1.6}/></span><span className="mt-3 block text-sm font-medium text-civic-text">Choose photo</span><span className="mt-1 block text-xs text-civic-muted">JPEG, PNG or WebP · Max 8 MB</span></span></button>}{fieldErrors.image && <p className="mt-2 text-xs text-red-300" role="alert">{fieldErrors.image}</p>}</div>
-          <div><label htmlFor="description" className="label">2. Describe the issue</label><textarea id="description" value={draft.description} onChange={event => setDraft({ description: event.target.value })} rows={4} maxLength={500} className="field resize-y" placeholder="What is damaged, where is it, and who may be affected?" aria-describedby="description-help description-error"/><div id="description-help" className="mt-2 flex justify-between text-[11px] text-civic-muted"><span>Include safety or accessibility impacts.</span><span className="data">{draft.description.length}/500</span></div>{fieldErrors.description && <p id="description-error" className="mt-2 text-xs text-red-300" role="alert">{fieldErrors.description}</p>}</div>
-          <div><label className="label" htmlFor="address">3. Confirm location</label><Button type="button" variant="secondary" icon={locating ? Navigation : LocateFixed} loading={locating} onClick={locate} className="mb-3 w-full">Use my current location</Button><div className="relative"><MapPin className="absolute left-3.5 top-3.5 text-civic-muted" size={16} strokeWidth={1.6}/><input id="address" className="field pl-10" value={address} onChange={event => setManualAddress(event.target.value)} placeholder="Street, intersection, or nearby landmark"/></div><p className="mt-2 text-[11px] leading-5 text-civic-muted">If device location is blocked, the demo map uses the city-center coordinate with your entered address.</p>{fieldErrors.location && <p className="mt-2 text-xs text-red-300" role="alert">{fieldErrors.location}</p>}</div>
-          <AsyncBanner state={asyncState} error={error} success="Report verified and routed."/>
-          <AnimatePresence>{asyncState === 'loading' && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="border border-civic-border bg-civic-bg p-4" role="status" aria-live="polite"><p className="eyebrow mb-4">AI assessment</p><div className="space-y-3">{stages.map((label, index) => <div key={label} className={`flex items-center gap-3 text-xs ${index <= stage ? 'text-civic-text' : 'text-civic-muted/50'}`}><span className={`grid h-5 w-5 place-items-center rounded-full border ${index < stage ? 'border-civic-success bg-civic-success/15 text-green-300' : index === stage ? 'border-civic-accent text-blue-300' : 'border-civic-border'}`}>{index < stage ? <Check size={11} strokeWidth={1.6}/> : <span className="data text-[9px]">{index + 1}</span>}</span>{label}</div>)}</div></motion.div>}</AnimatePresence>
-          <Button type="submit" icon={Send} loading={asyncState === 'loading'} className="w-full">Analyze and submit report</Button>
-        </form>
+  return (
+    <div className="space-y-8">
+      <SectionHeading
+        eyebrow="Resident Service Portal"
+        title={`Good ${new Date().getHours() < 12 ? 'morning' : 'afternoon'}, ${currentUser?.name.split(' ')[0]}`}
+        description="Report public infrastructure conditions and follow municipal work from verification through completion."
+      />
+
+      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4" aria-label="Report summary">
+        <Metric label="My Reports" value={mine.length} detail="All submitted cases" />
+        <Metric label="Open" value={open} detail="Awaiting completion" />
+        <Metric label="Resolved" value={mine.filter(item => item.status === 'resolved').length} detail="Field verified" tone="success" />
+        <Metric label="Avg. Response" value="2.8h" detail="Current service period" />
       </section>
-      <section><div className="mb-5 flex items-end justify-between"><div><p className="eyebrow">My activity</p><h2 className="mt-2 text-xl font-semibold">Recent reports</h2></div><span className="data text-xs text-civic-muted">{mine.length} total</span></div>{mine.length ? <div className="divide-y divide-civic-border border-y border-civic-border">{mine.slice(0, 8).map(item => <button key={item.id} onClick={() => navigate(`/citizen/complaints/${item.id}`)} className="group grid w-full grid-cols-[72px_1fr_auto] items-center gap-4 py-4 text-left"><img src={item.imageUrl} alt="" className="h-14 w-[72px] border border-civic-border object-cover"/><span className="min-w-0"><span className="flex items-center gap-2"><span className="data text-[10px] text-civic-muted">{item.id}</span><PriorityBadge priority={item.priority} compact/></span><span className="mt-1 block truncate text-sm font-medium text-civic-text">{item.title}</span><span className="mt-1 block truncate text-xs text-civic-muted">{item.location.address}</span></span><span className="flex flex-col items-end gap-2"><StatusBadge status={item.status}/><ChevronRight className="text-civic-muted transition-transform group-hover:translate-x-1" size={16} strokeWidth={1.6}/></span></button>)}</div> : <EmptyState icon={FileText} title="No reports yet" description="Your first infrastructure report will appear here with live municipal updates." action={<Button icon={Upload} onClick={() => document.getElementById('new-report')?.scrollIntoView()}>Start a report</Button>}/>}</section>
+
+      <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,.95fr)_minmax(420px,.75fr)]">
+        {/* Form Panel */}
+        <section id="new-report" className="scroll-mt-24 overflow-hidden border border-[#DCDAD7] bg-white shadow-sm">
+          <div className="border-b border-[#DCDAD7] bg-[#F2F1F0]/50 px-6 py-5">
+            <p className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#6B6F72]">
+              New Infrastructure Report
+            </p>
+            <h2 className="mt-1 font-sans text-xl font-bold uppercase tracking-[0.01em] text-[#2B3033]">
+              Show Us What Needs Attention
+            </h2>
+            <p className="mt-1 text-xs text-[#6B6F72]">
+              One clear photo and precise location help municipal crews respond faster.
+            </p>
+          </div>
+
+          <form onSubmit={submit} className="space-y-6 p-6 sm:p-7" noValidate>
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#2B3033]">
+                1. Add a clear photo
+              </label>
+              <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={upload} />
+              {draft.imageUrl ? (
+                <div className="relative overflow-hidden border border-[#DCDAD7] bg-[#F2F1F0]">
+                  <img src={draft.imageUrl} alt="Selected issue preview" className="aspect-[16/9] w-full object-cover" />
+                  <div className="flex items-center justify-between gap-3 border-t border-[#DCDAD7] bg-white px-4 py-2.5">
+                    <span className="truncate text-xs text-[#6B6F72]">{draft.fileName || 'Issue image'}</span>
+                    <button
+                      type="button"
+                      onClick={() => { setDraft({ imageUrl: '', fileName: '' }); if (inputRef.current) inputRef.current.value = '' }}
+                      className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-rose-600 hover:text-rose-700"
+                    >
+                      <X size={14} strokeWidth={2} /> Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => inputRef.current?.click()}
+                  className="grid min-h-44 w-full place-items-center border border-dashed border-[#DCDAD7] bg-[#F2F1F0]/60 px-5 text-center transition-colors hover:border-[#15BCDF]"
+                >
+                  <span>
+                    <span className="mx-auto grid h-12 w-12 place-items-center border border-[#DCDAD7] bg-white text-[#15BCDF]">
+                      <Camera size={22} strokeWidth={2} />
+                    </span>
+                    <span className="mt-3 block text-xs font-bold uppercase tracking-wider text-[#2B3033]">
+                      Choose photo
+                    </span>
+                    <span className="mt-1 block text-xs text-[#6B6F72]">JPEG, PNG or WebP · Max 8 MB</span>
+                  </span>
+                </button>
+              )}
+              {fieldErrors.image && <p className="mt-2 text-xs font-bold text-rose-600" role="alert">{fieldErrors.image}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="description" className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#2B3033]">
+                2. Describe the issue
+              </label>
+              <textarea
+                id="description"
+                value={draft.description}
+                onChange={event => setDraft({ description: event.target.value })}
+                rows={4}
+                maxLength={500}
+                className="w-full border border-[#DCDAD7] bg-[#F2F1F0]/40 px-4 py-3 text-sm text-[#2B3033] placeholder-[#6B6F72]/60 transition-colors focus:border-[#15BCDF] focus:outline-none focus:ring-1 focus:ring-[#15BCDF]"
+                placeholder="What is damaged, where is it, and who may be affected?"
+                aria-describedby="description-help description-error"
+              />
+              <div id="description-help" className="mt-2 flex justify-between text-[11px] text-[#6B6F72]">
+                <span>Include safety or accessibility impacts.</span>
+                <span className="font-mono">{draft.description.length}/500</span>
+              </div>
+              {fieldErrors.description && <p id="description-error" className="mt-2 text-xs font-bold text-rose-600" role="alert">{fieldErrors.description}</p>}
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#2B3033]" htmlFor="address">
+                3. Confirm location
+              </label>
+              <Button type="button" variant="secondary" icon={locating ? Navigation : LocateFixed} loading={locating} onClick={locate} className="mb-3 w-full">
+                Use current device location
+              </Button>
+              <div className="relative">
+                <MapPin className="absolute left-3.5 top-3.5 text-[#6B6F72]" size={16} strokeWidth={2} />
+                <input
+                  id="address"
+                  className="w-full border border-[#DCDAD7] bg-[#F2F1F0]/40 pl-10 pr-4 py-3 text-sm text-[#2B3033] placeholder-[#6B6F72]/60 focus:border-[#15BCDF] focus:outline-none focus:ring-1 focus:ring-[#15BCDF]"
+                  value={address}
+                  onChange={event => setManualAddress(event.target.value)}
+                  placeholder="Street, intersection, or nearby landmark"
+                />
+              </div>
+              <p className="mt-2 text-[11px] leading-5 text-[#6B6F72]">
+                If device location is blocked, the demo map uses the city-center coordinate with your entered address.
+              </p>
+              {fieldErrors.location && <p className="mt-2 text-xs font-bold text-rose-600" role="alert">{fieldErrors.location}</p>}
+            </div>
+
+            <AsyncBanner state={asyncState} error={error} success="Report verified and routed." />
+
+            <AnimatePresence>
+              {asyncState === 'loading' && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="border border-[#DCDAD7] bg-[#F2F1F0] p-4" role="status" aria-live="polite">
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-[#6B6F72] mb-3">AI assessment sequence</p>
+                  <div className="space-y-2.5">
+                    {stages.map((label, index) => (
+                      <div key={label} className={`flex items-center gap-3 text-xs ${index <= stage ? 'text-[#2B3033] font-bold' : 'text-[#6B6F72]/50'}`}>
+                        <span className={`grid h-5 w-5 place-items-center rounded-full border ${index < stage ? 'border-emerald-500 bg-emerald-50 text-emerald-600' : index === stage ? 'border-[#15BCDF] text-[#15BCDF]' : 'border-[#DCDAD7]'}`}>
+                          {index < stage ? <Check size={11} strokeWidth={2} /> : <span className="font-mono text-[9px]">{index + 1}</span>}
+                        </span>
+                        {label}
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <Button type="submit" icon={Send} loading={asyncState === 'loading'} className="w-full py-3.5">
+              Analyze and submit report
+            </Button>
+          </form>
+        </section>
+
+        {/* Activity Panel */}
+        <section>
+          <div className="mb-5 flex items-end justify-between border-b border-[#DCDAD7] pb-3">
+            <div>
+              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#6B6F72]">My Activity</p>
+              <h2 className="mt-1 font-sans text-xl font-bold uppercase tracking-[0.01em] text-[#2B3033]">Recent Reports</h2>
+            </div>
+            <span className="font-mono text-xs font-bold text-[#6B6F72]">{mine.length} TOTAL</span>
+          </div>
+
+          {mine.length ? (
+            <div className="divide-y divide-[#DCDAD7] border-y border-[#DCDAD7] bg-white">
+              {mine.slice(0, 8).map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => navigate(`/citizen/complaints/${item.id}`)}
+                  className="group grid w-full grid-cols-[72px_1fr_auto] items-center gap-4 p-4 text-left transition-colors hover:bg-[#F2F1F0]/50"
+                >
+                  <img src={item.imageUrl} alt="" className="h-14 w-[72px] border border-[#DCDAD7] object-cover" />
+                  <span className="min-w-0">
+                    <span className="flex items-center gap-2">
+                      <span className="font-mono text-[10px] font-bold text-[#6B6F72]">{item.id}</span>
+                      <PriorityBadge priority={item.priority} compact />
+                    </span>
+                    <span className="mt-1 block truncate text-sm font-bold text-[#2B3033]">{item.title}</span>
+                    <span className="mt-0.5 block truncate text-xs text-[#6B6F72]">{item.location.address}</span>
+                  </span>
+                  <span className="flex flex-col items-end gap-2">
+                    <StatusBadge status={item.status} />
+                    <ChevronRight className="text-[#6B6F72] transition-transform group-hover:translate-x-1" size={16} strokeWidth={2} />
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={FileText}
+              title="No reports yet"
+              description="Your first infrastructure report will appear here with live municipal updates."
+              action={<Button icon={Upload} onClick={() => document.getElementById('new-report')?.scrollIntoView()}>Start a report</Button>}
+            />
+          )}
+        </section>
+      </div>
     </div>
-  </div>
+  )
 }
