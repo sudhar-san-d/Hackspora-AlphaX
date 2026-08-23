@@ -1,4 +1,4 @@
-import { ArrowLeft, Camera, CheckCircle2, CircleDot, ExternalLink, LocateFixed, MapPin, Navigation, Play, Ruler, ShieldCheck, Upload, X } from 'lucide-react'
+import { ArrowLeft, Camera, CheckCircle2, CircleDot, ExternalLink, LocateFixed, MapPin, Navigation, Play, Ruler, ShieldCheck, X } from 'lucide-react'
 import { useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { CivicMap } from '../components/CivicMap'
@@ -8,8 +8,10 @@ import type { Coordinates } from '../types'
 
 function distanceMeters(a: Coordinates, b: Coordinates) {
   const radius = 6371e3
-  const p1 = a.lat * Math.PI / 180, p2 = b.lat * Math.PI / 180
-  const dp = (b.lat - a.lat) * Math.PI / 180, dl = (b.lng - a.lng) * Math.PI / 180
+  const p1 = (a.lat * Math.PI) / 180,
+    p2 = (b.lat * Math.PI) / 180
+  const dp = ((b.lat - a.lat) * Math.PI) / 180,
+    dl = ((b.lng - a.lng) * Math.PI) / 180
   const h = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2
   return radius * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h))
 }
@@ -27,22 +29,282 @@ export default function OfficerDetail() {
   const [locating, setLocating] = useState(false)
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
-  const distance = useMemo(() => complaint && location ? distanceMeters(complaint.location, location) : null, [complaint, location])
-  if (!complaint) return <div className="panel p-8"><h1 className="text-2xl font-semibold">Work item not found</h1><Button className="mt-5" variant="secondary" onClick={() => navigate('/officer')}>Return to queue</Button></div>
-  const start = async () => { setState('loading'); setMessage(''); try { if (complaint.status !== 'assigned') await updateStatus(id, 'assigned', 'Field officer accepted the assignment.'); await updateStatus(id, 'in_progress', 'Officer is navigating to the location and field work has started.'); setState('success'); setMessage('Work started and the resident was notified.') } catch { setState('error'); setMessage('Could not update this assignment.') } }
-  const selectImage = (event: ChangeEvent<HTMLInputElement>) => { const selected = event.target.files?.[0]; if (!selected) return; if (!selected.type.startsWith('image/')) { setState('error'); setMessage('Select a valid completion image.'); return } const reader = new FileReader(); reader.onload = () => { setImage(String(reader.result)); setFile(selected); setMessage('') }; reader.readAsDataURL(selected) }
-  const locate = () => { setLocating(true); setMessage(''); if (!navigator.geolocation) { setLocation({ ...complaint.location }); setLocating(false); setMessage('Device location unavailable. Using the report coordinate in demo mode.'); return } navigator.geolocation.getCurrentPosition(pos => { setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude, address: 'Officer completion location' }); setLocating(false) }, () => { setLocation({ ...complaint.location, address: 'Demo field location' }); setLocating(false); setMessage('Location permission was blocked. The report coordinate is used for this demo.') }, { enableHighAccuracy: true, timeout: 8000 }) }
-  const complete = async () => { if (!image) { setState('error'); setMessage('Add an after photo before completing work.'); return } if (!location) { setState('error'); setMessage('Capture your current location before completing work.'); return } if (note.trim().length < 10) { setState('error'); setMessage('Add a short completion note of at least 10 characters.'); return } if (distance !== null && distance > 350) { setState('error'); setMessage(`Completion location is ${Math.round(distance)} m from the report. Move within 350 m or use the report coordinate in demo mode.`); return } setState('loading'); setMessage('Uploading and verifying field evidence…'); try { const completed = await addEvidence(id, { url: image, note: note.trim(), coordinates: location, file }); if (completed.status !== 'resolved') await updateStatus(id, 'resolved', `Repair completed: ${note.trim()}`); setState('success'); setMessage('Completion verified. Opening the public result…'); window.setTimeout(() => navigate(`/verification/${id}`), 700) } catch { setState('error'); setMessage('Completion could not be verified. Evidence remains in this workspace.') } }
-  const openDirections = () => window.open(`https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${complaint.location.lat}%2C${complaint.location.lng}%3B${complaint.location.lat}%2C${complaint.location.lng}`, '_blank', 'noopener,noreferrer')
-  return <div className="space-y-7"><div className="flex flex-wrap items-center justify-between gap-3"><button onClick={() => navigate('/officer')} className="inline-flex items-center gap-2 text-sm text-civic-muted hover:text-civic-text"><ArrowLeft size={16} strokeWidth={1.6}/>Work queue</button><div className="flex items-center gap-2"><PriorityBadge priority={complaint.priority}/><StatusBadge status={complaint.status}/></div></div>
-    <header className="border-b border-civic-border pb-6"><p className="data text-xs text-civic-muted">{complaint.id} / {complaint.category}</p><h1 className="mt-3 max-w-4xl text-3xl font-semibold tracking-tight">{complaint.title}</h1><p className="mt-3 flex items-center gap-2 text-sm text-civic-muted"><MapPin size={16} strokeWidth={1.6}/>{complaint.location.address}</p></header>
-    <div className="grid gap-7 xl:grid-cols-[minmax(0,1.05fr)_minmax(380px,.75fr)]"><div className="space-y-7"><section className="panel overflow-hidden"><CivicMap complaints={[complaint]} selectedId={complaint.id} className="h-[380px] border-0"/><div className="grid grid-cols-2 divide-x divide-civic-border border-t border-civic-border"><Button variant="ghost" icon={Navigation} onClick={openDirections} className="rounded-none border-0 py-4">Navigate</Button><a href={`https://www.openstreetmap.org/?mlat=${complaint.location.lat}&mlon=${complaint.location.lng}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 py-4 text-sm font-semibold text-civic-muted hover:text-civic-text">Open full map<ExternalLink size={15} strokeWidth={1.6}/></a></div></section>
-      <section className="grid gap-5 sm:grid-cols-[200px_1fr]"><img src={complaint.imageUrl} alt="Reported condition" className="aspect-[4/3] w-full border border-civic-border object-cover"/><div><p className="eyebrow">Resident evidence</p><p className="mt-3 text-sm leading-6 text-civic-text">{complaint.description}</p><div className="mt-4 flex gap-6"><div><p className="eyebrow">AI confidence</p><p className="data mt-1">{complaint.confidence}%</p></div><div><p className="eyebrow">Severity</p><p className="data mt-1">{complaint.severityScore.toFixed(1)}/10</p></div></div></div></section>
-    </div><aside className="space-y-5"><section className="panel p-5"><p className="eyebrow">01 / Begin work</p><h2 className="mt-2 text-lg font-semibold">Acknowledge and start</h2><p className="mt-2 text-xs leading-5 text-civic-muted">Starting work records your assignment and sends a public progress update.</p><Button icon={Play} onClick={start} loading={state === 'loading'} disabled={complaint.status === 'in_progress' || complaint.status === 'resolved'} className="mt-5 w-full">{complaint.status === 'in_progress' ? 'Work already in progress' : complaint.status === 'resolved' ? 'Work completed' : 'Start work'}</Button></section>
-      <section className="panel p-5"><p className="eyebrow">02 / Completion evidence</p><h2 className="mt-2 text-lg font-semibold">Verify the repair on site</h2><div className="mt-5 space-y-5"><div><label className="label">After photo</label><input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={selectImage} className="sr-only"/>{image ? <div className="relative"><img src={image} alt="Completion preview" className="aspect-video w-full border border-civic-border object-cover"/><button onClick={() => { setImage(''); setFile(undefined) }} aria-label="Remove completion image" className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-sm bg-civic-bg text-civic-text"><X size={15} strokeWidth={1.6}/></button></div> : <button onClick={() => fileRef.current?.click()} className="flex min-h-28 w-full flex-col items-center justify-center border border-dashed border-civic-border bg-civic-bg text-sm text-civic-muted hover:border-civic-accent"><Camera size={21} strokeWidth={1.6}/><span className="mt-2">Capture or choose photo</span></button>}</div>
-      <div><label htmlFor="work-note" className="label">Work completed</label><textarea id="work-note" rows={3} className="field resize-y" value={note} onChange={event => setNote(event.target.value)} placeholder="Describe the repair and materials used"/></div>
-      <div><label className="label">Field location</label><Button variant="secondary" icon={LocateFixed} loading={locating} onClick={locate} className="w-full">Capture current location</Button>{location && <div className="mt-3 border-l-2 border-civic-success bg-civic-success/10 px-3 py-2"><p className="flex items-center gap-2 text-xs text-green-200"><CircleDot size={13} strokeWidth={1.6}/>Location captured</p><p className="data mt-1 text-[10px] text-civic-muted">{location.lat.toFixed(5)}, {location.lng.toFixed(5)}</p>{distance !== null && <p className={`mt-1 flex items-center gap-1 text-[10px] ${distance <= 350 ? 'text-green-300' : 'text-red-300'}`}><Ruler size={12} strokeWidth={1.6}/>{Math.round(distance)} m from reported point</p>}</div>}</div></div>
-      <AsyncBanner state={state} error={message} success={message}/><Button icon={ShieldCheck} onClick={complete} loading={state === 'loading'} disabled={complaint.status === 'resolved'} className="mt-5 w-full">Upload and verify completion</Button></section>
-      <div className="flex gap-3 border-l-2 border-civic-border pl-4"><CheckCircle2 className="shrink-0 text-civic-muted" size={18} strokeWidth={1.6}/><p className="text-xs leading-5 text-civic-muted">Resolution requires an image, completion note, and location within 350 m of the report.</p></div></aside></div>
-  </div>
+
+  const distance = useMemo(() => (complaint && location ? distanceMeters(complaint.location, location) : null), [complaint, location])
+
+  if (!complaint)
+    return (
+      <div className="border border-[#DCDAD7] bg-white p-8 shadow-sm">
+        <h1 className="font-sans text-2xl font-bold uppercase text-[#2B3033]">Work item not found</h1>
+        <Button className="mt-5" variant="secondary" onClick={() => navigate('/officer')}>
+          Return to queue
+        </Button>
+      </div>
+    )
+
+  const start = async () => {
+    setState('loading')
+    setMessage('')
+    try {
+      if (complaint.status !== 'assigned') await updateStatus(id, 'assigned', 'Field officer accepted the assignment.')
+      await updateStatus(id, 'in_progress', 'Officer is navigating to the location and field work has started.')
+      setState('success')
+      setMessage('Work started and the resident was notified.')
+    } catch {
+      setState('error')
+      setMessage('Could not update this assignment.')
+    }
+  }
+
+  const selectImage = (event: ChangeEvent<HTMLInputElement>) => {
+    const selected = event.target.files?.[0]
+    if (!selected) return
+    if (!selected.type.startsWith('image/')) {
+      setState('error')
+      setMessage('Select a valid completion image.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      setImage(String(reader.result))
+      setFile(selected)
+      setMessage('')
+    }
+    reader.readAsDataURL(selected)
+  }
+
+  const locate = () => {
+    setLocating(true)
+    setMessage('')
+    if (!navigator.geolocation) {
+      setLocation({ ...complaint.location })
+      setLocating(false)
+      setMessage('Device location unavailable. Using report coordinate.')
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude, address: 'Officer completion location' })
+        setLocating(false)
+      },
+      () => {
+        setLocation({ ...complaint.location, address: 'Demo field location' })
+        setLocating(false)
+        setMessage('Location permission blocked. Report coordinate used.')
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    )
+  }
+
+  const complete = async () => {
+    if (!image) {
+      setState('error')
+      setMessage('Add an after photo before completing work.')
+      return
+    }
+    if (!location) {
+      setState('error')
+      setMessage('Capture your current location before completing work.')
+      return
+    }
+    if (note.trim().length < 10) {
+      setState('error')
+      setMessage('Add a short completion note of at least 10 characters.')
+      return
+    }
+    if (distance !== null && distance > 350) {
+      setState('error')
+      setMessage(`Completion location is ${Math.round(distance)} m from the report. Move within 350 m or use report coordinate.`)
+      return
+    }
+    setState('loading')
+    setMessage('Uploading and verifying field evidence…')
+    try {
+      const completed = await addEvidence(id, { url: image, note: note.trim(), coordinates: location, file })
+      if (completed.status !== 'resolved') await updateStatus(id, 'resolved', `Repair completed: ${note.trim()}`)
+      setState('success')
+      setMessage('Completion verified. Opening the public result…')
+      window.setTimeout(() => navigate(`/verification/${id}`), 700)
+    } catch {
+      setState('error')
+      setMessage('Completion could not be verified. Evidence remains in this workspace.')
+    }
+  }
+
+  const openDirections = () =>
+    window.open(
+      `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${complaint.location.lat}%2C${complaint.location.lng}%3B${complaint.location.lat}%2C${complaint.location.lng}`,
+      '_blank',
+      'noopener,noreferrer'
+    )
+
+  return (
+    <div className="space-y-7">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <button onClick={() => navigate('/officer')} className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#6B6F72] hover:text-[#2B3033]">
+          <ArrowLeft size={16} strokeWidth={2} /> Work queue
+        </button>
+        <div className="flex items-center gap-2">
+          <PriorityBadge priority={complaint.priority} />
+          <StatusBadge status={complaint.status} />
+        </div>
+      </div>
+
+      <header className="border-b border-[#DCDAD7] pb-6">
+        <p className="font-mono text-xs font-bold text-[#6B6F72]">
+          {complaint.id} / {complaint.category}
+        </p>
+        <h1 className="mt-3 max-w-4xl font-sans text-3xl font-bold uppercase tracking-[0.01em] text-[#2B3033]">
+          {complaint.title}
+        </h1>
+        <p className="mt-3 flex items-center gap-2 text-sm text-[#6B6F72]">
+          <MapPin size={16} strokeWidth={2} className="text-[#6B6F72]" />
+          {complaint.location.address}
+        </p>
+      </header>
+
+      <div className="grid gap-7 xl:grid-cols-[minmax(0,1.05fr)_minmax(380px,.75fr)]">
+        <div className="space-y-7">
+          <section className="overflow-hidden border border-[#DCDAD7] bg-white shadow-sm">
+            <CivicMap complaints={[complaint]} selectedId={complaint.id} className="h-[380px] border-0" />
+            <div className="grid grid-cols-2 divide-x divide-[#DCDAD7] border-t border-[#DCDAD7]">
+              <Button variant="ghost" icon={Navigation} onClick={openDirections} className="rounded-none border-0 py-4">
+                Navigate
+              </Button>
+              <a
+                href={`https://www.openstreetmap.org/?mlat=${complaint.location.lat}&mlon=${complaint.location.lng}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center gap-2 py-4 text-xs font-bold uppercase tracking-wider text-[#6B6F72] hover:text-[#2B3033]"
+              >
+                Open full map
+                <ExternalLink size={15} strokeWidth={2} />
+              </a>
+            </div>
+          </section>
+
+          <section className="grid gap-5 sm:grid-cols-[200px_1fr] border border-[#DCDAD7] bg-white p-5 shadow-sm">
+            <img src={complaint.imageUrl} alt="Reported condition" className="aspect-[4/3] w-full border border-[#DCDAD7] object-cover" />
+            <div>
+              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#6B6F72]">Resident Evidence</p>
+              <p className="mt-2 text-xs leading-relaxed text-[#2B3033]">{complaint.description}</p>
+              <div className="mt-4 flex gap-6">
+                <div>
+                  <p className="font-mono text-[10px] font-bold uppercase text-[#6B6F72]">AI Confidence</p>
+                  <p className="font-mono mt-1 text-sm font-bold text-[#2B3033]">{complaint.confidence}%</p>
+                </div>
+                <div>
+                  <p className="font-mono text-[10px] font-bold uppercase text-[#6B6F72]">Severity</p>
+                  <p className="font-mono mt-1 text-sm font-bold text-[#2B3033]">{complaint.severityScore.toFixed(1)}/10</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside className="space-y-5">
+          <section className="border border-[#DCDAD7] bg-white p-6 shadow-sm">
+            <p className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#6B6F72]">01 / Begin Work</p>
+            <h2 className="mt-1 font-sans text-lg font-bold uppercase text-[#2B3033]">Acknowledge and Start</h2>
+            <p className="mt-1 text-xs leading-relaxed text-[#6B6F72]">Starting work records your assignment and sends a public progress update.</p>
+            <Button
+              icon={Play}
+              onClick={start}
+              loading={state === 'loading'}
+              disabled={complaint.status === 'in_progress' || complaint.status === 'resolved'}
+              className="mt-5 w-full py-3"
+            >
+              {complaint.status === 'in_progress' ? 'Work already in progress' : complaint.status === 'resolved' ? 'Work completed' : 'Start work'}
+            </Button>
+          </section>
+
+          <section className="border border-[#DCDAD7] bg-white p-6 shadow-sm">
+            <p className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#6B6F72]">02 / Completion Evidence</p>
+            <h2 className="mt-1 font-sans text-lg font-bold uppercase text-[#2B3033]">Verify the Repair On Site</h2>
+
+            <div className="mt-5 space-y-5">
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#2B3033]">After photo</label>
+                <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={selectImage} className="sr-only" />
+                {image ? (
+                  <div className="relative">
+                    <img src={image} alt="Completion preview" className="aspect-video w-full border border-[#DCDAD7] object-cover" />
+                    <button
+                      onClick={() => {
+                        setImage('')
+                        setFile(undefined)
+                      }}
+                      aria-label="Remove completion image"
+                      className="absolute right-2 top-2 grid h-8 w-8 place-items-center bg-[#1A1C1E] text-white"
+                    >
+                      <X size={15} strokeWidth={2} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    className="flex min-h-28 w-full flex-col items-center justify-center border border-dashed border-[#DCDAD7] bg-[#F2F1F0]/50 text-xs font-bold uppercase tracking-wider text-[#6B6F72] hover:border-[#15BCDF] hover:text-[#2B3033]"
+                  >
+                    <Camera size={21} strokeWidth={2} />
+                    <span className="mt-2">Capture or choose photo</span>
+                  </button>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="work-note" className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#2B3033]">
+                  Work completed
+                </label>
+                <textarea
+                  id="work-note"
+                  rows={3}
+                  className="w-full border border-[#DCDAD7] bg-[#F2F1F0]/40 px-3.5 py-2.5 text-xs text-[#2B3033] placeholder-[#6B6F72]/60 focus:border-[#15BCDF] focus:outline-none"
+                  value={note}
+                  onChange={event => setNote(event.target.value)}
+                  placeholder="Describe the repair and materials used"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#2B3033]">Field location</label>
+                <Button variant="secondary" icon={LocateFixed} loading={locating} onClick={locate} className="w-full">
+                  Capture current location
+                </Button>
+                {location && (
+                  <div className="mt-3 border-l-4 border-emerald-600 bg-emerald-50 px-4 py-3">
+                    <p className="flex items-center gap-2 text-xs font-bold text-emerald-800 uppercase">
+                      <CircleDot size={13} strokeWidth={2} />
+                      Location captured
+                    </p>
+                    <p className="font-mono mt-1 text-[10px] text-emerald-700">
+                      {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
+                    </p>
+                    {distance !== null && (
+                      <p className={`mt-1 flex items-center gap-1 text-[10px] font-bold ${distance <= 350 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                        <Ruler size={12} strokeWidth={2} />
+                        {Math.round(distance)} m from reported point
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <AsyncBanner state={state} error={message} success={message} />
+
+            <Button icon={ShieldCheck} onClick={complete} loading={state === 'loading'} disabled={complaint.status === 'resolved'} className="mt-5 w-full py-3.5">
+              Upload and verify completion
+            </Button>
+          </section>
+
+          <div className="flex gap-3 border-l-4 border-[#DCDAD7] pl-4">
+            <CheckCircle2 className="shrink-0 text-[#6B6F72]" size={18} strokeWidth={2} />
+            <p className="text-xs leading-relaxed text-[#6B6F72]">
+              Resolution requires an image, completion note, and location within 350 m of the report.
+            </p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  )
 }
