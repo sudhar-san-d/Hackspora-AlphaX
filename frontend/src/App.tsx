@@ -8,6 +8,7 @@ import type { Role } from './types'
 const Landing = lazy(() => import('./pages/Landing'))
 const Login = lazy(() => import('./pages/Login'))
 const CitizenPortal = lazy(() => import('./pages/CitizenPortal'))
+const NewReport = lazy(() => import('./pages/NewReport'))
 const CitizenDetail = lazy(() => import('./pages/CitizenDetail'))
 const OfficerDashboard = lazy(() => import('./pages/OfficerDashboard'))
 const OfficerDetail = lazy(() => import('./pages/OfficerDetail'))
@@ -17,7 +18,18 @@ const Notifications = lazy(() => import('./pages/Notifications'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 function RouteLoading() {
-  return <div className="min-h-[60dvh] space-y-6 p-4 sm:p-8" role="status" aria-label="Loading page"><Skeleton className="h-4 w-40"/><Skeleton className="h-10 max-w-xl"/><div className="grid gap-5 md:grid-cols-3"><Skeleton className="h-36"/><Skeleton className="h-36"/><Skeleton className="h-36"/></div><Skeleton className="h-72"/></div>
+  return (
+    <div className="min-h-[60dvh] space-y-6 p-4 sm:p-8" role="status" aria-label="Loading page">
+      <Skeleton className="h-4 w-40" />
+      <Skeleton className="h-10 max-w-xl" />
+      <div className="grid gap-5 md:grid-cols-3">
+        <Skeleton className="h-36" />
+        <Skeleton className="h-36" />
+        <Skeleton className="h-36" />
+      </div>
+      <Skeleton className="h-72" />
+    </div>
+  )
 }
 
 function Guard({ roles, children }: { roles: Role[]; children: ReactNode }) {
@@ -29,16 +41,21 @@ function Guard({ roles, children }: { roles: Role[]; children: ReactNode }) {
 }
 
 export default function App() {
-  return <Suspense fallback={<RouteLoading/>}><Routes>
-    <Route path="/" element={<Landing/>}/>
-    <Route path="/login" element={<Login/>}/>
-    <Route path="/citizen" element={<Guard roles={['citizen']}><CitizenPortal/></Guard>}/>
-    <Route path="/citizen/complaints/:id" element={<Guard roles={['citizen']}><CitizenDetail/></Guard>}/>
-    <Route path="/officer" element={<Guard roles={['officer']}><OfficerDashboard/></Guard>}/>
-    <Route path="/officer/complaints/:id" element={<Guard roles={['officer']}><OfficerDetail/></Guard>}/>
-    <Route path="/admin" element={<Guard roles={['admin']}><AdminDashboard/></Guard>}/>
-    <Route path="/notifications" element={<Guard roles={['citizen','officer','admin']}><Notifications/></Guard>}/>
-    <Route path="/verification/:id" element={<Verification/>}/>
-    <Route path="*" element={<NotFound/>}/>
-  </Routes></Suspense>
+  return (
+    <Suspense fallback={<RouteLoading />}>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/citizen" element={<Guard roles={['citizen']}><CitizenPortal /></Guard>} />
+        <Route path="/citizen/new" element={<Guard roles={['citizen']}><NewReport /></Guard>} />
+        <Route path="/citizen/complaints/:id" element={<Guard roles={['citizen']}><CitizenDetail /></Guard>} />
+        <Route path="/officer" element={<Guard roles={['officer']}><OfficerDashboard /></Guard>} />
+        <Route path="/officer/complaints/:id" element={<Guard roles={['officer']}><OfficerDetail /></Guard>} />
+        <Route path="/admin" element={<Guard roles={['admin']}><AdminDashboard /></Guard>} />
+        <Route path="/notifications" element={<Guard roles={['citizen', 'officer', 'admin']}><Notifications /></Guard>} />
+        <Route path="/verification/:id" element={<Verification />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
+  )
 }

@@ -7,9 +7,19 @@ import type { Role } from '../types'
 import { IconButton } from './UI'
 
 const navByRole: Record<Role, Array<{ to: string; label: string; icon: typeof Home }>> = {
-  citizen: [{ to: '/citizen', label: 'My reports', icon: Home }, { to: '/citizen#new-report', label: 'New report', icon: FilePlus2 }, { to: '/notifications', label: 'Notifications', icon: Bell }],
-  officer: [{ to: '/officer', label: 'Work queue', icon: ClipboardList }, { to: '/notifications', label: 'Notifications', icon: Bell }],
-  admin: [{ to: '/admin', label: 'Command center', icon: Building2 }, { to: '/notifications', label: 'Notifications', icon: Bell }],
+  citizen: [
+    { to: '/citizen', label: 'My reports', icon: Home },
+    { to: '/citizen/new', label: 'New report', icon: FilePlus2 },
+    { to: '/notifications', label: 'Notifications', icon: Bell },
+  ],
+  officer: [
+    { to: '/officer', label: 'Work queue', icon: ClipboardList },
+    { to: '/notifications', label: 'Notifications', icon: Bell },
+  ],
+  admin: [
+    { to: '/admin', label: 'Command center', icon: Building2 },
+    { to: '/notifications', label: 'Notifications', icon: Bell },
+  ],
 }
 
 export function Brand({ compact = false }: { compact?: boolean }) {
@@ -73,7 +83,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             onClick={() => setMobileOpen(false)}
             to={item.to}
             style={{
-              fontFamily: "'Quantico', 'Arial Narrow', sans-serif",
+              fontFamily: "'Quantico', 'Arial Narrow', sans-[#F2F1F0]",
               borderLeftWidth: '3px',
               borderLeftColor: isActive ? '#15BCDF' : 'transparent',
               backgroundColor: isActive ? '#FFFFFF' : 'transparent',
