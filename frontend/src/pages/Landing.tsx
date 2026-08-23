@@ -311,12 +311,9 @@ export default function Landing() {
                 : 'min(clamp(40px, 9vw, 120px), 9vh) 20px min(clamp(24px, 4vw, 44px), 5vh) clamp(20px, 9vw, 118px)',
             }}
           >
-            <div>POWERING</div>
-            <div>THE</div>
-            <div>RESPONSE</div>
-            <div>FOR</div>
-            <div>MODERN</div>
-            <div style={{ color: '#15BCDF' }}>CITIES</div>
+            <div>POWERING THE</div>
+            <div>FOR RESPONSE</div>
+            <div style={{ color: '#15BCDF' }}>MODERN CITIES</div>
           </h1>
 
           {/* CTA Button Wrapper */}
