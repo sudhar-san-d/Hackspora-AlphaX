@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, useCallback, type CSSProperties } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 
 /* ─── constants ─── */
@@ -71,12 +71,12 @@ function useAutoplay(ref: React.RefObject<HTMLVideoElement | null>) {
 /* ─── shared button ─── */
 function ChamferedButton({
   children,
-  style,
   onClick,
+  style,
 }: {
   children: React.ReactNode
-  style?: CSSProperties
   onClick?: () => void
+  style?: CSSProperties
 }) {
   const [hovered, setHovered] = useState(false)
   return (
@@ -310,8 +310,8 @@ function Navbar({ mobile }: { mobile: boolean }) {
 }
 
 function ContactButton() {
-  const [hovered, setHovered] = useState(false)
   const navigate = useNavigate()
+  const [hovered, setHovered] = useState(false)
   return (
     <button
       onClick={() => navigate('/login')}
@@ -344,9 +344,9 @@ function ContactButton() {
 
 /* ─── HERO SECTION ─── */
 function HeroSection({ mobile }: { mobile: boolean }) {
+  const navigate = useNavigate()
   const videoRef = useRef<HTMLVideoElement>(null)
   useAutoplay(videoRef)
-  const navigate = useNavigate()
 
   const indent = 'min(238px, 28vw)'
 
@@ -484,9 +484,9 @@ function HeroSection({ mobile }: { mobile: boolean }) {
 
 /* ─── ABOUT SECTION ─── */
 function AboutSection({ mobile }: { mobile: boolean }) {
+  const navigate = useNavigate()
   const videoRef = useRef<HTMLVideoElement>(null)
   useAutoplay(videoRef)
-  const navigate = useNavigate()
 
   const aboutIndent = 'min(160px, 18vw)'
 
