@@ -1,0 +1,50 @@
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-sans/700.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import 'leaflet/dist/leaflet.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; font-synthesis: none; background: #0B1220; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; background: #0B1220; }
+body { margin: 0; min-width: 320px; min-height: 100dvh; overflow-x: hidden; background: #0B1220; color: #F8FAFC; font-family: 'IBM Plex Sans', sans-serif; }
+button, input, textarea, select { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+::selection { background: #2563EB; color: #F8FAFC; }
+:focus-visible { outline: 2px solid #2563EB; outline-offset: 3px; }
+
+@layer components {
+  .shell { @apply mx-auto w-full max-w-[1480px] px-4 sm:px-6 lg:px-8; }
+  .panel { @apply border border-civic-border bg-civic-surface shadow-panel; }
+  .eyebrow { @apply font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-civic-muted; }
+  .label { @apply mb-2 block text-sm font-medium text-civic-text; }
+  .field { @apply w-full rounded-md border border-civic-border bg-civic-bg px-3.5 py-3 text-sm text-civic-text placeholder:text-civic-muted/65 transition-colors hover:border-civic-muted/60 focus:border-civic-accent focus:outline-none focus:ring-1 focus:ring-civic-accent; }
+  .grid-signature { background-image: linear-gradient(#263244 1px, transparent 1px), linear-gradient(90deg, #263244 1px, transparent 1px); background-size: 48px 48px; }
+  .carto-lines { background-image: repeating-linear-gradient(115deg, transparent 0, transparent 46px, rgba(38,50,68,.38) 47px, transparent 48px); }
+  .data { @apply font-mono tabular-nums; }
+  .leaflet-container { background: #111827; font-family: 'IBM Plex Sans', sans-serif; }
+  .leaflet-control-zoom a { background: #111827 !important; border-color: #263244 !important; color: #F8FAFC !important; }
+  .leaflet-control-attribution { background: rgba(11,18,32,.88) !important; color: #94A3B8 !important; }
+  .leaflet-control-attribution a { color: #F8FAFC !important; }
+  .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #111827; color: #F8FAFC; border-radius: 4px; }
+  .leaflet-popup-content { margin: 12px 14px; }
+}
+
+.priority-marker { width: 24px; height: 24px; border: 3px solid #F8FAFC; border-radius: 50%; box-shadow: 0 3px 14px rgba(2,6,23,.45); position: relative; }
+.priority-marker::after { content: ''; position: absolute; inset: 5px; border-radius: 50%; background: #F8FAFC; }
+.priority-critical { background: #DC2626; }
+.priority-high { background: #D97706; }
+.priority-medium { background: #2563EB; }
+.priority-low { background: #16A34A; }
+.marker-selected { transform: scale(1.25); box-shadow: 0 0 0 5px rgba(248,250,252,.18), 0 3px 18px rgba(2,6,23,.5); }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
