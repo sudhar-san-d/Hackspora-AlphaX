@@ -1,216 +1,640 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { ChevronDown, Menu, X } from 'lucide-react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 
-export default function Landing() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+/* ─── constants ─── */
+const ACCENT = '#15BCDF'
+const ACCENT_HOVER = '#3fd0ef'
+const ACCENT_BORDER = '#0fa3c2'
+const BG = '#F2F1F0'
+const HEAD_COLOR = '#2b3033'
+const NAV_COLOR = '#3a3a3a'
+const BODY_GRAY = '#6b6f72'
+const DARK = '#1a1c1e'
+const FONT = "'Quantico', 'Arial Narrow', sans-serif"
+
+const HERO_VIDEO =
+  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260823_050407_500d0339-ab28-41c1-9688-132a74a3b5aa.mp4'
+const ABOUT_VIDEO =
+  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260823_063501_2e2c8971-de1e-473a-8611-a0c9ae7ee186.mp4'
+
+const CHAMFER =
+  'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))'
+const CHAMFER_SM =
+  'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))'
+
+const MOBILE = 700
+
+/* ─── hooks ─── */
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth <= MOBILE : false,
+  )
+  useEffect(() => {
+    const handler = () => setMobile(window.innerWidth <= MOBILE)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+  return mobile
+}
+
+/* Robust autoplay: retry every 1 s + first user gesture */
+function useAutoplay(ref: React.RefObject<HTMLVideoElement | null>) {
+  useEffect(() => {
+    const v = ref.current
+    if (!v) return
+
+    const tryPlay = () => {
+      if (!v) return
+      v.muted = true
+      v.play().catch(() => {})
+    }
+
+    tryPlay()
+    const id = setInterval(tryPlay, 1000)
+
+    const gesture = () => {
+      tryPlay()
+      document.removeEventListener('click', gesture)
+      document.removeEventListener('touchstart', gesture)
+    }
+    document.addEventListener('click', gesture, { once: true })
+    document.addEventListener('touchstart', gesture, { once: true })
+
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('click', gesture)
+      document.removeEventListener('touchstart', gesture)
+    }
+  }, [ref])
+}
+
+/* ─── shared button ─── */
+function ChamferedButton({
+  children,
+  style,
+  onClick,
+}: {
+  children: React.ReactNode
+  style?: CSSProperties
+  onClick?: () => void
+}) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        fontFamily: FONT,
+        background: hovered ? ACCENT_HOVER : ACCENT,
+        border: `1px solid ${ACCENT_BORDER}`,
+        color: DARK,
+        textTransform: 'uppercase',
+        fontWeight: 700,
+        letterSpacing: '0.14em',
+        padding: '18px 34px',
+        fontSize: 'clamp(13px, 2.2vw, 16px)',
+        clipPath: CHAMFER,
+        boxShadow: hovered
+          ? `0 0 0 2px rgba(21,188,223,0.5), 0 14px 40px -10px rgba(15,163,194,0.7)`
+          : `0 0 0 1px rgba(21,188,223,0.35), 0 10px 30px -12px rgba(15,163,194,0.6)`,
+        cursor: 'pointer',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '14px',
+        transition: 'background 0.2s, box-shadow 0.2s',
+        lineHeight: 1,
+        ...style,
+      }}
+    >
+      {children}
+      {/* Trailing line */}
+      <span
+        style={{
+          display: 'inline-block',
+          width: 22,
+          height: 1,
+          background: DARK,
+          flexShrink: 0,
+        }}
+      />
+    </button>
+  )
+}
+
+/* ─── mail icon ─── */
+function MailIcon() {
+  return (
+    <svg
+      width="17"
+      height="13"
+      viewBox="0 0 17 13"
+      fill="none"
+      stroke="white"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="0.7" y="0.7" width="15.6" height="11.6" rx="1.5" />
+      <path d="M0.7 0.7 L8.5 7 L16.3 0.7" />
+    </svg>
+  )
+}
+
+/* ─── hamburger ─── */
+function Hamburger({
+  open,
+  onClick,
+}: {
+  open: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={open ? 'Close menu' : 'Open menu'}
+      style={{
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 5,
+        padding: 6,
+      }}
+    >
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          style={{
+            display: 'block',
+            width: 22,
+            height: 2,
+            background: open ? '#333' : '#fff',
+            borderRadius: 1,
+            transition: 'transform 0.25s, opacity 0.2s',
+            ...(open && i === 0
+              ? { transform: 'translateY(7px) rotate(45deg)' }
+              : {}),
+            ...(open && i === 1 ? { opacity: 0 } : {}),
+            ...(open && i === 2
+              ? { transform: 'translateY(-7px) rotate(-45deg)' }
+              : {}),
+          }}
+        />
+      ))}
+    </button>
+  )
+}
+
+/* ─── NAVBAR ─── */
+function Navbar({ mobile }: { mobile: boolean }) {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const links = ['HOME', 'ABOUT', 'CONTACT US']
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-[#0B1220] text-gray-900 dark:text-white font-['Inter',sans-serif] selection:bg-[#2E7DF3] selection:text-white">
-      {/* 🧭 Navigation Bar */}
-      <header className="w-full border-b border-gray-100 dark:border-gray-800/60 bg-white/80 dark:bg-[#0B1220]/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#2E7DF3] to-blue-400 flex items-center justify-center text-sm shadow-md shadow-[#2E7DF3]/20 group-hover:scale-105 transition-transform">
-              🌍
-            </div>
-            <span className="font-bold text-xl tracking-tight text-gray-900 dark:text-white">
-              Terra
-            </span>
-          </Link>
-
-          {/* Desktop Nav Links (≥ lg) */}
-          <nav className="hidden lg:flex items-center gap-8">
-            <a href="#product" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium text-sm transition-colors">
-              Product
-            </a>
-            <a href="#solutions" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium text-sm transition-colors">
-              Solutions
-            </a>
-            <div className="relative group">
-              <button className="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium text-sm transition-colors py-2">
-                <span>Resources</span>
-                <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-transform group-hover:rotate-180" />
-              </button>
-            </div>
-            <a href="#examples" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium text-sm transition-colors">
-              Examples
-            </a>
-            <a href="#pricing" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium text-sm transition-colors">
-              Pricing
-            </a>
-          </nav>
-
-          {/* Right Side Desktop Buttons */}
-          <div className="hidden lg:flex items-center gap-3">
-            <Link
-              to="/login"
-              className="rounded-full border border-gray-300 dark:border-gray-700 px-5 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors"
-            >
-              Login
-            </Link>
-            <Link
-              to="/login?role=citizen"
-              className="rounded-full bg-[#2E7DF3] text-white px-5 py-2 text-sm font-medium hover:bg-[#256BD4] transition-colors shadow-md shadow-[#2E7DF3]/20"
-            >
-              Sign Up
-            </Link>
-          </div>
-
-          {/* Mobile/Tablet Hamburger Menu Button (< lg) */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            aria-label="Toggle navigation menu"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-        </div>
-
-        {/* Mobile / Tablet Dropdown Menu */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0B1220] px-4 pt-2 pb-6 space-y-3">
-            <a
-              href="#product"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-              Product
-            </a>
-            <a
-              href="#solutions"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-              Solutions
-            </a>
-            <a
-              href="#resources"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-between px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-              <span>Resources</span>
-              <ChevronDown className="w-4 h-4 text-gray-400" />
-            </a>
-            <a
-              href="#examples"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-              Examples
-            </a>
-            <a
-              href="#pricing"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-              Pricing
-            </a>
-            <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2">
-              <Link
-                to="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center rounded-full border border-gray-300 dark:border-gray-700 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                Login
-              </Link>
-              <Link
-                to="/login?role=citizen"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center rounded-full bg-[#2E7DF3] text-white px-5 py-2.5 text-sm font-medium hover:bg-[#256BD4]"
-              >
-                Sign Up
-              </Link>
-            </div>
-          </div>
-        )}
-      </header>
-
-      {/* 🚀 Hero Content (Centered, Flex Column) */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 pt-8 pb-20 text-center max-w-6xl mx-auto w-full">
-        {/* Product Hunt Badge */}
-        <div className="mt-10 inline-flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50/50 dark:bg-red-950/20 px-3.5 py-1.5 shadow-xs transition-transform hover:scale-[1.02]">
-          <span className="text-base leading-none">🏆</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-red-400">
-            PRODUCT HUNT
-          </span>
-          <span className="text-xs text-red-300 dark:text-red-800 font-light">•</span>
-          <span className="text-[14px] font-semibold text-red-500 dark:text-red-400">
-            #1 Product of the Day
-          </span>
-        </div>
-
-        {/* Heading */}
-        <h1
-          className="font-medium tracking-tight text-5xl md:text-7xl max-w-4xl mt-8 leading-[1.15] md:leading-[1.1]"
-          style={{ letterSpacing: '-0.03em' }}
+    <nav
+      style={{
+        position: 'relative',
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: 'clamp(20px, 5vw, 56px)',
+        padding: `clamp(20px, 3vw, 38px) clamp(20px, 4vw, 48px) 0`,
+        fontFamily: FONT,
+        zIndex: 20,
+      }}
+    >
+      {/* Logo */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <svg width="38" height="38" viewBox="0 0 38 38">
+          <circle cx="19" cy="19" r="19" fill="#111" />
+          <ellipse
+            cx="19"
+            cy="19"
+            rx="10"
+            ry="4"
+            fill="white"
+            transform="rotate(-25 19 19)"
+          />
+        </svg>
+        <span
+          style={{
+            fontSize: 'clamp(22px, 5vw, 30px)',
+            fontWeight: 400,
+            color: '#111',
+            letterSpacing: '-0.5px',
+            lineHeight: 1,
+          }}
         >
-          <span className="text-[#2E7DF3]">The ultimate geo </span>
-          <span className="text-[#2E7DF3]">map </span>
-          <span className="relative inline-block px-3 py-1 my-1">
-            <span
-              className="bg-clip-text text-transparent inline-block"
+          targo
+        </span>
+      </div>
+
+      {/* Desktop links */}
+      {!mobile && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 34,
+            alignItems: 'center',
+          }}
+        >
+          {links.map((l) => (
+            <a
+              key={l}
+              href={`#${l.toLowerCase().replace(/\s/g, '')}`}
               style={{
-                backgroundImage: 'linear-gradient(135deg, #767676 0%, #D3D3D3 100%)',
+                fontWeight: 700,
+                fontSize: 'clamp(12px, 2.4vw, 15px)',
+                letterSpacing: '0.06em',
+                color: NAV_COLOR,
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+                textTransform: 'uppercase',
+                fontFamily: FONT,
               }}
             >
-              builder
-            </span>
-            <svg
-              className="absolute inset-0 w-full h-full pointer-events-none -rotate-[0.5deg]"
-              viewBox="0 0 200 95"
-              preserveAspectRatio="none"
-              aria-hidden="true"
+              {l}
+            </a>
+          ))}
+        </div>
+      )}
+
+      {/* Spacer */}
+      <div style={{ flex: 1 }} />
+
+      {/* Desktop Contact button */}
+      {!mobile && (
+        <ContactButton />
+      )}
+
+      {/* Mobile hamburger */}
+      {mobile && (
+        <Hamburger open={menuOpen} onClick={() => setMenuOpen((v) => !v)} />
+      )}
+
+      {/* Mobile menu */}
+      {mobile && menuOpen && (
+        <div
+          style={{
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 18,
+            padding: '20px 0 12px 0',
+          }}
+        >
+          {links.map((l) => (
+            <a
+              key={l}
+              href={`#${l.toLowerCase().replace(/\s/g, '')}`}
+              onClick={() => setMenuOpen(false)}
+              style={{
+                fontFamily: FONT,
+                fontWeight: 700,
+                fontSize: 15,
+                color: DARK,
+                textDecoration: 'none',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+              }}
             >
-              <path
-                d="M5 5 L195 5 L195 88 L5 72 Z"
-                fill="none"
-                stroke="#B0B0B0"
-                strokeWidth="1.2"
-                strokeDasharray="6 4"
-              />
-              {/* Corner dots */}
-              <circle cx="5" cy="5" r="3.5" fill="#B0B0B0" />
-              <circle cx="195" cy="5" r="3.5" fill="#B0B0B0" />
-              <circle cx="5" cy="72" r="3.5" fill="#B0B0B0" />
-              <circle cx="195" cy="88" r="3.5" fill="#B0B0B0" />
-              {/* Midpoint dots */}
-              <circle cx="100" cy="5" r="3" fill="#B0B0B0" />
-              <circle cx="100" cy="80" r="3" fill="#B0B0B0" />
-              <circle cx="5" cy="38.5" r="3" fill="#B0B0B0" />
-              <circle cx="195" cy="46.5" r="3" fill="#B0B0B0" />
-            </svg>
+              {l}
+            </a>
+          ))}
+        </div>
+      )}
+    </nav>
+  )
+}
+
+function ContactButton() {
+  const [hovered, setHovered] = useState(false)
+  const navigate = useNavigate()
+  return (
+    <button
+      onClick={() => navigate('/login')}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        fontFamily: FONT,
+        background: hovered ? 'rgba(255,255,255,0.14)' : 'transparent',
+        border: 'none',
+        color: 'white',
+        textTransform: 'uppercase',
+        letterSpacing: '0.14em',
+        padding: '14px 26px',
+        clipPath: CHAMFER_SM,
+        cursor: 'pointer',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 10,
+        fontWeight: 700,
+        fontSize: 13,
+        transition: 'background 0.2s',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      <MailIcon />
+      Contact us
+    </button>
+  )
+}
+
+/* ─── HERO SECTION ─── */
+function HeroSection({ mobile }: { mobile: boolean }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  useAutoplay(videoRef)
+  const navigate = useNavigate()
+
+  const indent = 'min(238px, 28vw)'
+
+  return (
+    <section
+      style={{
+        position: 'relative',
+        minHeight: '100svh',
+        background: BG,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* Background video */}
+      <video
+        ref={videoRef}
+        src={HERO_VIDEO}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        style={{
+          position: 'absolute',
+          pointerEvents: 'none',
+          objectFit: 'contain',
+          height: 'auto',
+          zIndex: 1,
+          ...(mobile
+            ? { top: 0, left: '-12%', width: '119%' }
+            : { top: 0, right: '-20%', width: '99%' }),
+        }}
+      />
+
+      {/* Desktop scrim */}
+      {!mobile && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '70%',
+            height: '100%',
+            background: `linear-gradient(90deg, ${BG} 0%, ${BG} 55%, rgba(242,241,240,0.85) 78%, rgba(242,241,240,0) 100%)`,
+            zIndex: 2,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+
+      {/* Navbar */}
+      <div style={{ position: 'relative', zIndex: 10 }}>
+        <Navbar mobile={mobile} />
+      </div>
+
+      {/* Headline + CTA */}
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 10,
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: mobile ? 'flex-start' : 'center',
+          ...(mobile
+            ? { marginTop: 360, padding: '0 20px 28px 20px' }
+            : {
+                padding: `min(clamp(40px, 9vw, 120px), 9vh) 20px min(clamp(24px, 4vw, 44px), 5vh) clamp(20px, 9vw, 118px)`,
+              }),
+        }}
+      >
+        <h1
+          style={{
+            fontFamily: FONT,
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.01em',
+            lineHeight: 0.98,
+            color: HEAD_COLOR,
+            fontSize: mobile
+              ? 'clamp(34px, 10vw, 56px)'
+              : 'min(clamp(34px, 7.6vw, 80px), 9.2vh)',
+            margin: 0,
+          }}
+        >
+          <span style={{ display: 'block' }}>SCALING</span>
+          <span style={{ display: 'block' }}>THE</span>
+          <span style={{ display: 'block' }}>PLATFORM</span>
+          <span
+            style={{
+              display: 'block',
+              paddingLeft: `${indent}`,
+            }}
+          >
+            FOR
+          </span>
+          <span
+            style={{
+              display: 'block',
+              paddingLeft: `${indent}`,
+            }}
+          >
+            YOUR
+          </span>
+          <span
+            style={{
+              display: 'block',
+              paddingLeft: `${indent}`,
+              color: ACCENT,
+            }}
+          >
+            BUSINESS
           </span>
         </h1>
 
-        {/* Subtext */}
-        <p className="mt-8 text-gray-500 dark:text-gray-400 text-base md:text-lg max-w-lg text-center leading-relaxed font-normal">
-          Terra is how teams build maps and run spatial intelligence together.
-          <br className="hidden sm:inline" />
-          Design, collaborate, share — all in one place.
+        {/* CTA */}
+        <div
+          style={{
+            ...(mobile
+              ? { padding: '28px 0 0 0' }
+              : {
+                  paddingLeft: `calc(clamp(20px, 9vw, 118px) + ${indent})`,
+                  paddingBottom: `min(clamp(36px, 6vw, 80px), 7vh)`,
+                  paddingTop: 'clamp(20px, 3vw, 36px)',
+                }),
+          }}
+        >
+          <ChamferedButton onClick={() => navigate('/login')}>GET STARTED</ChamferedButton>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ─── ABOUT SECTION ─── */
+function AboutSection({ mobile }: { mobile: boolean }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  useAutoplay(videoRef)
+  const navigate = useNavigate()
+
+  const aboutIndent = 'min(160px, 18vw)'
+
+  return (
+    <section
+      id="about"
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: 40,
+        background: `linear-gradient(180deg, ${BG} 0%, #F7F6F8 18%, #F7F6F8 100%)`,
+        padding: `clamp(60px, 10vw, 140px) 0 clamp(30px, 5vw, 70px) clamp(20px, 9vw, 118px)`,
+      }}
+    >
+      {/* Left column */}
+      <div
+        style={{
+          flex: '1 1 420px',
+          minWidth: 300,
+        }}
+      >
+        <h2
+          style={{
+            fontFamily: FONT,
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.01em',
+            lineHeight: 0.98,
+            fontSize: 'clamp(34px, 6.5vw, 72px)',
+            color: HEAD_COLOR,
+            margin: 0,
+          }}
+        >
+          <span style={{ display: 'block' }}>ABOUT</span>
+          <span
+            style={{
+              display: 'block',
+              paddingLeft: aboutIndent,
+              color: ACCENT,
+            }}
+          >
+            BUSINESS
+          </span>
+        </h2>
+
+        <p
+          style={{
+            fontFamily: FONT,
+            maxWidth: 520,
+            marginTop: 32,
+            marginLeft: aboutIndent,
+            marginBottom: 0,
+            marginRight: 0,
+            fontSize: 'clamp(14px, 1.6vw, 17px)',
+            lineHeight: 1.7,
+            color: BODY_GRAY,
+          }}
+        >
+          Targo builds the testing infrastructure modern teams rely on. From
+          automated pipelines to full-scale QA audits, we make sure your software
+          ships fast and breaks nothing. Hundreds of releases, zero surprises.
         </p>
 
-        {/* CTA Button */}
-        <Link
-          to="/login?role=citizen"
-          className="mt-8 px-10 py-4 bg-[#2E7DF3] text-white font-semibold rounded-full shadow-lg shadow-[#2E7DF3]/20 hover:bg-[#256BD4] transition-all hover:scale-105 active:scale-95 inline-block text-base"
+        <div
+          style={{
+            marginTop: 36,
+            marginLeft: aboutIndent,
+          }}
         >
-          Get Started Free
-        </Link>
+          <ChamferedButton onClick={() => navigate('/login')}>LEARN MORE</ChamferedButton>
+        </div>
+      </div>
 
-        {/* Video */}
-        <div className="mt-12 w-full max-w-5xl rounded-xl overflow-hidden shadow-none border border-gray-200 dark:border-gray-800/60 bg-gray-900/50">
+      {/* Right column */}
+      <div
+        style={{
+          flex: '1 1 360px',
+          minWidth: 280,
+          display: 'flex',
+          justifyContent: 'flex-end',
+          position: 'relative',
+        }}
+      >
+        <div style={{ position: 'relative', width: '100%', maxWidth: 644 }}>
           <video
-            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_092310_5c71bab5-63cd-4a95-9390-cc6a1189d553.mp4"
-            muted
+            ref={videoRef}
+            src={ABOUT_VIDEO}
             autoPlay
+            muted
             loop
             playsInline
-            className="w-full h-auto object-cover block"
+            preload="auto"
+            style={{
+              width: '100%',
+              height: 'auto',
+              display: 'block',
+            }}
+          />
+          {/* Hue overlay */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              width: '100%',
+              maxWidth: 644,
+              height: '100%',
+              background: ACCENT,
+              mixBlendMode: 'hue',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
           />
         </div>
-      </main>
+      </div>
+    </section>
+  )
+}
+
+/* ─── LANDING PAGE ─── */
+export default function Landing() {
+  const mobile = useIsMobile()
+
+  /* Force body styles for this page */
+  useEffect(() => {
+    const prev = {
+      margin: document.body.style.margin,
+      background: document.body.style.background,
+      color: document.body.style.color,
+      fontFamily: document.body.style.fontFamily,
+    }
+    document.body.style.margin = '0'
+    document.body.style.background = BG
+    document.body.style.color = HEAD_COLOR
+    document.body.style.fontFamily = FONT
+    return () => {
+      document.body.style.margin = prev.margin
+      document.body.style.background = prev.background
+      document.body.style.color = prev.color
+      document.body.style.fontFamily = prev.fontFamily
+    }
+  }, [])
+
+  return (
+    <div style={{ fontFamily: FONT, background: BG, minHeight: '100vh' }}>
+      <HeroSection mobile={mobile} />
+      <AboutSection mobile={mobile} />
     </div>
   )
 }
